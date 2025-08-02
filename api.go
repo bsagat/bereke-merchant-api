@@ -13,14 +13,14 @@ import (
 
 type (
 	method string
-	mode   string
+	Mode   string
 )
 
 const (
 	GET  method = "GET"
 	POST method = "POST"
-	TEST mode   = "TEST"
-	PROD mode   = "PROD"
+	TEST Mode   = "TEST"
+	PROD Mode   = "PROD"
 )
 
 var (
@@ -54,20 +54,20 @@ type api struct {
 	certPassphrase string
 }
 
-func NewWithLogin(login, password string, mode mode) (API, error) {
+func NewWithLogin(login, password string, mode Mode) (API, error) {
 	creds := url.Values{}
 	creds.Set("userName", login)
 	creds.Set("password", password)
 	return newAPI(mode, creds, authLogin, "", "")
 }
 
-func NewWithToken(token string, mode mode) (API, error) {
+func NewWithToken(token string, mode Mode) (API, error) {
 	creds := url.Values{}
 	creds.Set("token", token)
 	return newAPI(mode, creds, authToken, "", "")
 }
 
-func NewWithCertificate(certPath, passphrase string, mode mode) (API, error) {
+func NewWithCertificate(certPath, passphrase string, mode Mode) (API, error) {
 	return newAPI(mode, url.Values{}, authCertificate, certPath, passphrase)
 }
 
