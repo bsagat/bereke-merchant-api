@@ -49,7 +49,7 @@ type api struct {
 	authType       authType
 	credentials    url.Values
 	baseURL        string
-	mode           mode
+	mode           Mode
 	certPath       string
 	certPassphrase string
 }
@@ -71,7 +71,7 @@ func NewWithCertificate(certPath, passphrase string, mode Mode) (API, error) {
 	return newAPI(mode, url.Values{}, authCertificate, certPath, passphrase)
 }
 
-func newAPI(mode mode, creds url.Values, at authType, certPath, passphrase string) (API, error) {
+func newAPI(mode Mode, creds url.Values, at authType, certPath, passphrase string) (API, error) {
 	var baseURL string
 	switch mode {
 	case TEST:
