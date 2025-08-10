@@ -1,4 +1,4 @@
-package bereke_merchant
+package dto
 
 import (
 	"net/url"

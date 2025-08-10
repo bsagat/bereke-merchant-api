@@ -9,18 +9,16 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/bsagat/bereke-merchant-api/models/dto"
+	"github.com/bsagat/bereke-merchant-api/models/types"
 )
 
-type (
-	method string
-	mode   string
-)
+type method string
 
 const (
 	GET  method = "GET"
 	POST method = "POST"
-	TEST mode   = "TEST"
-	PROD mode   = "PROD"
 )
 
 var (
@@ -28,62 +26,68 @@ var (
 	prodURL = "https://securepayments.berekebank.kz/payment/rest/"
 )
 
+// API — основной интерфейс работы с Bereke Merchant API.
 type API interface {
-	RegisterOrder(ctx context.Context, req RegisterOrderRequest) (RegisterOrderResponse, error)
-	OrderStatus(ctx context.Context, req OrderStatusRequest) (OrderStatusResponse, error)
-	RefundOrder(ctx context.Context, req RefundOrderRequest) (Response, error)
-	ReversalOrder(ctx context.Context, req ReversalOrderRequest) (Response, error)
-	CancelOrder(ctx context.Context, req CancelOrderRequest) (Response, error)
+	// --- Заказы ---
+	RegisterOrder(ctx context.Context, req dto.RegisterOrderRequest) (dto.RegisterOrderResponse, error)
+	RegisterOrderByNumber(ctx context.Context, orderNumber string, amount float64, currency int, returnURL, failURL string) (dto.RegisterOrderResponse, error)
+
+	GetOrderStatus(ctx context.Context, req dto.OrderStatusRequest) (dto.OrderStatusResponse, error)
+	GetOrderStatusByID(ctx context.Context, orderID string) (dto.OrderStatusResponse, error)
+
+	// --- Операции с заказами ---
+	RefundOrder(ctx context.Context, req dto.RefundOrderRequest) (dto.Response, error)
+	RefundOrderByID(ctx context.Context, amount float64, currency int, orderID string) (dto.Response, error)
+
+	ReversalOrder(ctx context.Context, req dto.ReversalOrderRequest) (dto.Response, error)
+	ReversalOrderByID(ctx context.Context, amount float64, currency int, orderID string) (dto.Response, error)
+
+	CancelOrder(ctx context.Context, req dto.CancelOrderRequest) (dto.Response, error)
+	CancelOrderByID(ctx context.Context, orderID string) (dto.Response, error)
+
+	// --- Системное ---
 	Ping() error
 }
 
-type authType int
-
-const (
-	authLogin authType = iota
-	authToken
-	authCertificate
-)
-
 type api struct {
-	authType       authType
+	authType       types.Auth
 	credentials    url.Values
 	baseURL        string
-	mode           mode
+	mode           types.Mode
 	certPath       string
 	certPassphrase string
 }
 
-func NewWithLogin(login, password string, mode mode) (API, error) {
+func NewWithLogin(login, password string, mode types.Mode) (API, error) {
 	creds := url.Values{}
 	creds.Set("userName", login)
 	creds.Set("password", password)
-	return newAPI(mode, creds, authLogin, "", "")
+	return newAPI(mode, creds, types.AuthLogin, "", "")
 }
 
-func NewWithToken(token string, mode mode) (API, error) {
+func NewWithToken(token string, mode types.Mode) (API, error) {
 	creds := url.Values{}
 	creds.Set("token", token)
-	return newAPI(mode, creds, authToken, "", "")
+	return newAPI(mode, creds, types.AuthToken, "", "")
 }
 
-func NewWithCertificate(certPath, passphrase string, mode mode) (API, error) {
-	return newAPI(mode, url.Values{}, authCertificate, certPath, passphrase)
+func NewWithCertificate(certPath, passphrase string, mode types.Mode) (API, error) {
+	return newAPI(mode, url.Values{}, types.AuthCertificate, certPath, passphrase)
 }
 
-func newAPI(mode mode, creds url.Values, at authType, certPath, passphrase string) (API, error) {
+func newAPI(mode types.Mode, creds url.Values, authType types.Auth, certPath, passphrase string) (API, error) {
 	var baseURL string
 	switch mode {
-	case TEST:
+	case types.TEST:
 		baseURL = testURL
-	case PROD:
+	case types.PROD:
 		baseURL = prodURL
 	default:
 		return nil, fmt.Errorf("invalid mode: %s", mode)
 	}
 
 	return &api{
-		authType:       at,
+		authType:       authType,
 		credentials:    creds,
 		baseURL:        baseURL,
 		mode:           mode,
@@ -106,7 +110,7 @@ func (a *api) Ping() error {
 	return nil
 }
 
-func (a *api) do(ctx context.Context, method method, path string, params url.Values, result interface{}) error {
+func (a *api) sendRequest(ctx context.Context, method method, path string, params url.Values, result interface{}) error {
 	endpoint := fmt.Sprintf("%s/%s", a.baseURL, path)
 	req, err := http.NewRequestWithContext(ctx, string(method), endpoint, nil)
 	if err != nil {
@@ -131,7 +135,7 @@ func (a *api) do(ctx context.Context, method method, path string, params url.Val
 	}
 
 	// PROD-режим: подписываем или шифруем
-	if a.mode == PROD && a.authType == authCertificate {
+	if a.mode == types.PROD && a.authType == types.AuthCertificate {
 		body := query.Encode()
 		if err := a.signAndSetHeaders(req, body); err != nil {
 			log.Printf("Error signing request: %v", err)
