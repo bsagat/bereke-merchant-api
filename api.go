@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/bsagat/bereke-merchant-api/models/dto"
+	"github.com/bsagat/bereke-merchant-api/models/core"
 	"github.com/bsagat/bereke-merchant-api/models/types"
 )
 
@@ -29,21 +29,21 @@ var (
 // API — основной интерфейс работы с Bereke Merchant API.
 type API interface {
 	// --- Заказы ---
-	RegisterOrder(ctx context.Context, req dto.RegisterOrderRequest) (dto.RegisterOrderResponse, error)
-	RegisterOrderByNumber(ctx context.Context, orderNumber string, amount float64, currency int, returnURL, failURL string) (dto.RegisterOrderResponse, error)
+	RegisterOrder(ctx context.Context, req core.RegisterOrderRequest) (core.RegisterOrderResponse, error)
+	RegisterOrderByNumber(ctx context.Context, orderNumber string, amount float64, currency int, returnURL, failURL string) (core.RegisterOrderResponse, error)
 
-	GetOrderStatus(ctx context.Context, req dto.OrderStatusRequest) (dto.OrderStatusResponse, error)
-	GetOrderStatusByID(ctx context.Context, orderID string) (dto.OrderStatusResponse, error)
+	GetOrderStatus(ctx context.Context, req core.OrderStatusRequest) (core.OrderStatusResponse, error)
+	GetOrderStatusByID(ctx context.Context, orderID string) (core.OrderStatusResponse, error)
 
 	// --- Операции с заказами ---
-	RefundOrder(ctx context.Context, req dto.RefundOrderRequest) (dto.Response, error)
-	RefundOrderByID(ctx context.Context, amount float64, currency int, orderID string) (dto.Response, error)
+	RefundOrder(ctx context.Context, req core.RefundOrderRequest) (core.Response, error)
+	RefundOrderByID(ctx context.Context, amount float64, currency int, orderID string) (core.Response, error)
 
-	ReversalOrder(ctx context.Context, req dto.ReversalOrderRequest) (dto.Response, error)
-	ReversalOrderByID(ctx context.Context, amount float64, currency int, orderID string) (dto.Response, error)
+	ReversalOrder(ctx context.Context, req core.ReversalOrderRequest) (core.Response, error)
+	ReversalOrderByID(ctx context.Context, amount float64, currency int, orderID string) (core.Response, error)
 
-	CancelOrder(ctx context.Context, req dto.CancelOrderRequest) (dto.Response, error)
-	CancelOrderByID(ctx context.Context, orderID string) (dto.Response, error)
+	CancelOrder(ctx context.Context, req core.CancelOrderRequest) (core.Response, error)
+	CancelOrderByID(ctx context.Context, orderID string) (core.Response, error)
 
 	// --- Системное ---
 	Ping() error

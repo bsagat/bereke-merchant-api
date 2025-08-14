@@ -3,8 +3,7 @@ package bereke_merchant
 import (
 	"context"
 
-	money "github.com/bsagat/bereke-merchant-api/currency"
-	"github.com/bsagat/bereke-merchant-api/models/dto"
+	"github.com/bsagat/bereke-merchant-api/models/core"
 )
 
 // RegisterOrder — упрощённая обёртка для создания заказа.
@@ -16,19 +15,12 @@ func (a *api) RegisterOrderByNumber(
 	amount float64,
 	currency int,
 	returnURL, failURL string,
-) (dto.RegisterOrderResponse, error) {
-
-	// Преобразуем сумму в минорные единицы (например, 10.50 USD -> 1050 центов)
-	amountMinor, err := money.ToMinorUnit(amount, currency)
-	if err != nil {
-		return dto.RegisterOrderResponse{}, err
-	}
-
+) (core.RegisterOrderResponse, error) {
 	// Формируем упрощённый запрос
-	req := dto.RegisterOrderRequest{
-		Order: dto.Order{
+	req := core.RegisterOrderRequest{
+		Order: core.Order{
 			OrderNumber: orderNumber,
-			Amount:      amountMinor,
+			Amount:      amount,
 			Currency:    currency,
 			ReturnURL:   returnURL,
 			FailURL:     failURL,
@@ -44,18 +36,11 @@ func (a *api) RefundOrderByID(
 	amount float64,
 	currency int,
 	orderID string,
-) (dto.Response, error) {
-
-	// Преобразуем сумму в минорные единицы (например, 10.50 USD -> 1050 центов)
-	amountMinor, err := money.ToMinorUnit(amount, currency)
-	if err != nil {
-		return dto.Response{}, err
-	}
-
+) (core.Response, error) {
 	// Формируем упрощённый запрос
-	req := dto.RefundOrderRequest{
+	req := core.RefundOrderRequest{
 		OrderID:  orderID,
-		Amount:   amountMinor,
+		Amount:   amount,
 		Currency: currency,
 	}
 
@@ -68,18 +53,11 @@ func (a *api) ReversalOrderByID(
 	amount float64,
 	currency int,
 	orderID string,
-) (dto.Response, error) {
-
-	// Преобразуем сумму в минорные единицы (например, 10.50 USD -> 1050 центов)
-	amountMinor, err := money.ToMinorUnit(amount, currency)
-	if err != nil {
-		return dto.Response{}, err
-	}
-
+) (core.Response, error) {
 	// Формируем упрощённый запрос
-	req := dto.ReversalOrderRequest{
+	req := core.ReversalOrderRequest{
 		OrderID:  orderID,
-		Amount:   amountMinor,
+		Amount:   amount,
 		Currency: currency,
 	}
 
@@ -90,10 +68,10 @@ func (a *api) ReversalOrderByID(
 func (a *api) CancelOrderByID(
 	ctx context.Context,
 	orderID string,
-) (dto.Response, error) {
+) (core.Response, error) {
 
 	// Формируем основной запрос
-	req := dto.CancelOrderRequest{
+	req := core.CancelOrderRequest{
 		OrderID: orderID,
 	}
 
@@ -104,10 +82,10 @@ func (a *api) CancelOrderByID(
 func (a *api) GetOrderStatusByID(
 	ctx context.Context,
 	orderID string,
-) (dto.OrderStatusResponse, error) {
+) (core.OrderStatusResponse, error) {
 
 	// Формируем основной запрос
-	req := dto.OrderStatusRequest{
+	req := core.OrderStatusRequest{
 		OrderID: orderID,
 	}
 
