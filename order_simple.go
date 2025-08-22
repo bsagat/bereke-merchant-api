@@ -31,6 +31,43 @@ func (a *api) RegisterOrderByNumber(
 	return a.RegisterOrder(ctx, req)
 }
 
+func (a *api) AuthOrderByNumber(
+	ctx context.Context,
+	orderNumber string,
+	amount float64,
+	currency int,
+	returnURL, failURL string,
+) (core.RegisterOrderResponse, error) {
+	// Формируем упрощённый запрос
+	req := core.RegisterOrderRequest{
+		Order: core.Order{
+			OrderNumber: orderNumber,
+			Amount:      amount,
+			Currency:    currency,
+			ReturnURL:   returnURL,
+			FailURL:     failURL,
+		},
+	}
+
+	// Вызываем основной метод авторизации заказа
+	return a.AuthOrder(ctx, req)
+}
+
+func (a *api) DepositOrderByNumber(
+	ctx context.Context,
+	orderNumber string,
+	amount float64,
+	currency int,
+) (core.Response, error) {
+	req := core.DepositOrderRequest{
+		OrderID:  orderNumber,
+		Amount:   amount,
+		Currency: currency,
+	}
+
+	return a.DepositOrder(ctx, req)
+}
+
 func (a *api) RefundOrderByID(
 	ctx context.Context,
 	amount float64,

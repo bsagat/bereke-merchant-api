@@ -32,6 +32,12 @@ type API interface {
 	RegisterOrder(ctx context.Context, req core.RegisterOrderRequest) (core.RegisterOrderResponse, error)
 	RegisterOrderByNumber(ctx context.Context, orderNumber string, amount float64, currency int, returnURL, failURL string) (core.RegisterOrderResponse, error)
 
+	AuthOrder(ctx context.Context, req core.RegisterOrderRequest) (core.RegisterOrderResponse, error)
+	AuthOrderByNumber(ctx context.Context, orderNumber string, amount float64, currency int, returnURL, failURL string) (core.RegisterOrderResponse, error)
+
+	DepositOrderByNumber(ctx context.Context, orderNumber string, amount float64, currency int) (core.Response, error)
+	DepositOrder(ctx context.Context, req core.DepositOrderRequest) (core.Response, error)
+
 	GetOrderStatus(ctx context.Context, req core.OrderStatusRequest) (core.OrderStatusResponse, error)
 	GetOrderStatusByID(ctx context.Context, orderID string) (core.OrderStatusResponse, error)
 

@@ -13,3 +13,14 @@ const (
 	OrderStatusWaiting                       // 7 - ожидание оплаты заказа
 	OrderStatusPartial                       // 8 - промежуточное завершение для многократного частичного завершения
 )
+
+type PaymentState string
+
+const (
+	OrderCreated   PaymentState = "CREATED"   // Заказ создан (но не оплачен)
+	OrderApproved  PaymentState = "APPROVED"  // Заказ одобрен (средства на счету покупателя заблокированы)
+	OrderDeposited PaymentState = "DEPOSITED" // Заказ завершен (деньги списаны со счета покупателя)
+	OrderDeclined  PaymentState = "DECLINED"  // Заказ отклонен
+	OrderReversed  PaymentState = "REVERSED"  // Авторизованный заказ отклонен
+	OrderRefunded  PaymentState = "REFUNDED"  // Возврат средств
+)

@@ -5,15 +5,10 @@ import (
 	"github.com/bsagat/bereke-merchant-api/models/core"
 )
 
-func FromCoreOrder(req core.Order) (Order, error) {
-	minorAmount, err := money.ToMinorUnit(req.Amount, req.Currency)
-	if err != nil {
-		return Order{}, err
-	}
-
+func FromCoreOrder(req core.Order) Order {
 	return Order{
 		OrderNumber:        req.OrderNumber,
-		Amount:             minorAmount,
+		Amount:             money.ToMinorUnit(req.Amount, req.Currency),
 		Currency:           req.Currency,
 		ReturnURL:          req.ReturnURL,
 		FailURL:            req.FailURL,
@@ -23,17 +18,12 @@ func FromCoreOrder(req core.Order) (Order, error) {
 		ExpirationDate:     req.ExpirationDate,
 		Features:           req.Features,
 		FeeInput:           req.FeeInput,
-	}, nil
+	}
 }
 
-func FromCoreRegisterOrder(req core.RegisterOrderRequest) (RegisterOrderRequest, error) {
-	dtoOrder, err := FromCoreOrder(req.Order)
-	if err != nil {
-		return RegisterOrderRequest{}, err
-	}
-
+func FromCoreRegisterOrder(req core.RegisterOrderRequest) RegisterOrderRequest {
 	return RegisterOrderRequest{
-		Order:              dtoOrder,
+		Order:              FromCoreOrder(req.Order),
 		IP:                 req.IP,
 		ClientId:           req.ClientId,
 		CardholderName:     req.CardholderName,
@@ -41,24 +31,28 @@ func FromCoreRegisterOrder(req core.RegisterOrderRequest) (RegisterOrderRequest,
 		BindingId:          req.BindingId,
 		PostAddress:        req.PostAddress,
 		DynamicCallbackURL: req.DynamicCallbackURL,
-	}, nil
+	}
 }
 
-func FromCoreRefundOrder(req core.RefundOrderRequest) (RefundOrderRequest, error) {
-	minorAmount, err := money.ToMinorUnit(req.Amount, req.Currency)
-	if err != nil {
-		return RefundOrderRequest{}, err
+func FromCoreDepositOrder(req core.DepositOrderRequest) DepositOrderRequest {
+	return DepositOrderRequest{
+		OrderID:  req.OrderID,
+		Amount:   money.ToMinorUnit(req.Amount, req.Currency),
+		Language: req.Language,
+		Currency: req.Currency,
 	}
+}
 
+func FromCoreRefundOrder(req core.RefundOrderRequest) RefundOrderRequest {
 	return RefundOrderRequest{
 		OrderID:                 req.OrderID,
-		Amount:                  minorAmount,
+		Amount:                  money.ToMinorUnit(req.Amount, req.Currency),
 		Currency:                req.Currency,
 		Language:                req.Language,
 		JSONParams:              req.JSONParams,
 		ExpectedDepositedAmount: req.ExpectedDepositedAmount,
 		ExternalRefundID:        req.ExternalRefundID,
-	}, nil
+	}
 }
 
 func FromCoreOrderStatus(req core.OrderStatusRequest) OrderStatusRequest {
@@ -70,21 +64,16 @@ func FromCoreOrderStatus(req core.OrderStatusRequest) OrderStatusRequest {
 	}
 }
 
-func FromCoreReversalOrder(req core.ReversalOrderRequest) (ReversalOrderRequest, error) {
-	minorAmount, err := money.ToMinorUnit(req.Amount, req.Currency)
-	if err != nil {
-		return ReversalOrderRequest{}, err
-	}
-
+func FromCoreReversalOrder(req core.ReversalOrderRequest) ReversalOrderRequest {
 	return ReversalOrderRequest{
 		OrderID:       req.OrderID,
 		OrderNumber:   req.OrderNumber,
-		Amount:        minorAmount,
+		Amount:        money.ToMinorUnit(req.Amount, req.Currency),
 		Currency:      req.Currency,
 		Language:      req.Language,
 		JSONParams:    req.JSONParams,
 		MerchantLogin: req.MerchantLogin,
-	}, nil
+	}
 }
 
 func FromCoreCancelOrder(req core.CancelOrderRequest) CancelOrderRequest {

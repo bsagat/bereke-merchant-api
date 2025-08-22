@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-func (r *RegisterOrderRequest) ToUrlValues() (url.Values, error) {
+func (r RegisterOrderRequest) ToUrlValues() url.Values {
 	values := url.Values{}
 
 	values.Set("orderNumber", r.OrderNumber)
@@ -57,10 +57,26 @@ func (r *RegisterOrderRequest) ToUrlValues() (url.Values, error) {
 		values.Set("email", r.Email)
 	}
 
-	return values, nil
+	return values
 }
 
-func (r OrderStatusRequest) ToUrlValues() (url.Values, error) {
+func (r DepositOrderRequest) ToUrlValues() url.Values {
+	values := url.Values{}
+	values.Set("amount", strconv.Itoa(r.Amount))
+
+	if r.OrderID != "" {
+		values.Set("orderId", r.OrderID)
+	}
+	if r.Currency != 0 {
+		values.Set("currency", strconv.Itoa(r.Currency))
+	}
+	if r.Language != "" {
+		values.Set("language", r.Language)
+	}
+	return values
+}
+
+func (r OrderStatusRequest) ToUrlValues() url.Values {
 	values := url.Values{}
 	if r.OrderID != "" {
 		values.Set("orderId", r.OrderID)
@@ -74,10 +90,10 @@ func (r OrderStatusRequest) ToUrlValues() (url.Values, error) {
 	if r.MerchantLogin != "" {
 		values.Set("merchantLogin", r.MerchantLogin)
 	}
-	return values, nil
+	return values
 }
 
-func (r RefundOrderRequest) ToUrlValues() (url.Values, error) {
+func (r RefundOrderRequest) ToUrlValues() url.Values {
 	values := url.Values{}
 	values.Set("orderId", r.OrderID)
 	values.Set("amount", strconv.Itoa(r.Amount))
@@ -98,10 +114,10 @@ func (r RefundOrderRequest) ToUrlValues() (url.Values, error) {
 		values.Set("currency", strconv.Itoa(r.Currency))
 	}
 
-	return values, nil
+	return values
 }
 
-func (r ReversalOrderRequest) ToUrlValues() (url.Values, error) {
+func (r ReversalOrderRequest) ToUrlValues() url.Values {
 	values := url.Values{}
 	values.Set("orderId", r.OrderID)
 
@@ -124,14 +140,14 @@ func (r ReversalOrderRequest) ToUrlValues() (url.Values, error) {
 		values.Set("currency", strconv.Itoa(r.Currency))
 	}
 
-	return values, nil
+	return values
 }
 
-func (r CancelOrderRequest) ToUrlValues() (url.Values, error) {
+func (r CancelOrderRequest) ToUrlValues() url.Values {
 	values := url.Values{}
 	values.Set("orderId", r.OrderID)
 	values.Set("language", r.Language)
 	values.Set("orderNumber", r.OrderNumber)
 
-	return values, nil
+	return values
 }

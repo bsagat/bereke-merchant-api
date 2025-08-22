@@ -1,12 +1,9 @@
 package money
 
 import (
-	"errors"
 	"math"
 	"strconv"
 )
-
-var ErrCurrencyNotSupported = errors.New("currency is not supported")
 
 // Доступные валюты
 const (
@@ -64,24 +61,24 @@ func FromString(value string) string {
 
 // ToMinorUnit переводит сумму в основных единицах валюты (например, 10.50 USD)
 // в количество минорных единиц (например, 1050 центов).
-func ToMinorUnit(amount float64, currency int) (int, error) {
+func ToMinorUnit(amount float64, currency int) int {
 	minor, ok := minorUnits[currency]
 	if !ok {
 		// по умолчанию считаем 2 знака
-		return 0, ErrCurrencyNotSupported
+		minor = 100
 	}
 
-	return int(math.Round(amount * float64(minor))), nil
+	return int(math.Round(amount * float64(minor)))
 }
 
 // ConvertFromMinorUnits переводит сумму в минорных единцах валюты (например, 1050 центов)
 // в основых единицах валюты (например, 10.50 USD)
-func ConvertFromMinorUnits(minorAmount int, currency int) (float64, error) {
+func ConvertFromMinorUnits(minorAmount int, currency int) float64 {
 	minor, ok := minorUnits[currency]
 	if !ok {
 		// по умолчанию считаем 2 знака
-		return 0, ErrCurrencyNotSupported
+		minor = 100
 	}
 
-	return float64(minorAmount) / float64(minor), nil
+	return float64(minorAmount) / float64(minor)
 }

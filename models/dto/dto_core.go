@@ -25,11 +25,10 @@ func (res *RegisterOrderResponse) DtoToCore() core.RegisterOrderResponse {
 
 func (res *OrderStatusResponse) DtoToCore() core.OrderStatusResponse {
 	convertedCurrency := money.ToNumeric(res.Currency)
-	amount, _ := money.ConvertFromMinorUnits(res.MinorAmount, convertedCurrency)
 
 	return core.OrderStatusResponse{
 		Response: res.Response.DtoToCore(),
-		Amount:   amount,
+		Amount:   money.ConvertFromMinorUnits(res.MinorAmount, convertedCurrency),
 		Currency: convertedCurrency,
 
 		OrderID:     res.OrderID,
