@@ -26,32 +26,71 @@ var (
 	prodURL = "https://securepayments.berekebank.kz/payment/rest/"
 )
 
-// API — основной интерфейс работы с Bereke Merchant API.
+// API — основной интерфейс для работы с Bereke Merchant API.
+// Содержит методы для регистрации, авторизации, списания и возврата средств,
+// а также для отмены заказов и получения их статуса.
+//
+// Методы разделены на группы:
+//   - Заказы (RegisterOrder, AuthOrder, GetOrderStatus...)
+//   - Операции с заказами (RefundOrder, DepositOrder, ReversalOrder, CancelOrder...)
+//   - Системные методы (Ping)
 type API interface {
 	// --- Заказы ---
+
+	// RegisterOrder — регистрация нового заказа (без авторизации).
+	// Endpoint: register.do
 	RegisterOrder(ctx context.Context, req core.RegisterOrderRequest) (core.RegisterOrderResponse, error)
+
+	// RegisterOrderByNumber — упрощённая регистрация заказа по номеру.
 	RegisterOrderByNumber(ctx context.Context, orderNumber string, amount float64, currency int, returnURL, failURL string) (core.RegisterOrderResponse, error)
 
+	// AuthOrder — регистрация и авторизация заказа (с блокировкой средств).
+	// Endpoint: registerPreAuth.do
 	AuthOrder(ctx context.Context, req core.RegisterOrderRequest) (core.RegisterOrderResponse, error)
+
+	// AuthOrderByNumber — упрощённая регистрация и авторизация заказа по номеру.
 	AuthOrderByNumber(ctx context.Context, orderNumber string, amount float64, currency int, returnURL, failURL string) (core.RegisterOrderResponse, error)
 
-	DepositOrderByNumber(ctx context.Context, orderNumber string, amount float64, currency int) (core.Response, error)
-	DepositOrder(ctx context.Context, req core.DepositOrderRequest) (core.Response, error)
-
+	// GetOrderStatus — получение расширенного статуса заказа.
+	// Endpoint: getOrderStatusExtended.do
 	GetOrderStatus(ctx context.Context, req core.OrderStatusRequest) (core.OrderStatusResponse, error)
+
+	// GetOrderStatusByID — упрощённое получение статуса заказа по ID.
 	GetOrderStatusByID(ctx context.Context, orderID string) (core.OrderStatusResponse, error)
 
 	// --- Операции с заказами ---
+
+	// RefundOrder — возврат средств по заказу.
+	// Endpoint: refund.do
 	RefundOrder(ctx context.Context, req core.RefundOrderRequest) (core.Response, error)
+
+	// RefundOrderByID — упрощённый возврат средств по ID заказа.
 	RefundOrderByID(ctx context.Context, amount float64, currency int, orderID string) (core.Response, error)
 
+	// DepositOrder — подтверждение (capture) ранее авторизованного заказа.
+	// Endpoint: deposit.do
+	DepositOrder(ctx context.Context, req core.DepositOrderRequest) (core.Response, error)
+
+	// DepositOrderByNumber — упрощённый capture заказа по номеру.
+	DepositOrderByNumber(ctx context.Context, orderNumber string, amount float64, currency int) (core.Response, error)
+
+	// ReversalOrder — реверсирование (отмена авторизации).
+	// Endpoint: reverse.do
 	ReversalOrder(ctx context.Context, req core.ReversalOrderRequest) (core.Response, error)
+
+	// ReversalOrderByID — упрощённый реверс заказа по ID.
 	ReversalOrderByID(ctx context.Context, amount float64, currency int, orderID string) (core.Response, error)
 
+	// CancelOrder — отклонение заказа (до завершения).
+	// Endpoint: decline.do
 	CancelOrder(ctx context.Context, req core.CancelOrderRequest) (core.Response, error)
+
+	// CancelOrderByID — упрощённая отмена заказа по ID.
 	CancelOrderByID(ctx context.Context, orderID string) (core.Response, error)
 
 	// --- Системное ---
+
+	// Ping — проверка доступности API (делает GET на базовый URL).
 	Ping() error
 }
 
@@ -64,6 +103,7 @@ type api struct {
 	certPassphrase string
 }
 
+// NewWithLogin — инициализация API с аутентификацией по логину/паролю.
 func NewWithLogin(login, password string, mode types.Mode) (API, error) {
 	creds := url.Values{}
 	creds.Set("userName", login)
@@ -71,12 +111,14 @@ func NewWithLogin(login, password string, mode types.Mode) (API, error) {
 	return newAPI(mode, creds, types.AuthLogin, "", "")
 }
 
+// NewWithToken — инициализация API с аутентификацией по токену.
 func NewWithToken(token string, mode types.Mode) (API, error) {
 	creds := url.Values{}
 	creds.Set("token", token)
 	return newAPI(mode, creds, types.AuthToken, "", "")
 }
 
+// NewWithCertificate — инициализация API с аутентификацией по сертификату (PKCS12).
 func NewWithCertificate(certPath, passphrase string, mode types.Mode) (API, error) {
 	return newAPI(mode, url.Values{}, types.AuthCertificate, certPath, passphrase)
 }
@@ -116,6 +158,16 @@ func (a *api) Ping() error {
 	return nil
 }
 
+// sendRequest — низкоуровневый метод для отправки HTTP-запросов к Bereke Merchant API.
+// Поддерживает авторизацию через логин/пароль, токен или сертификат (в PROD-режиме).
+// Аргументы:
+//   - ctx — контекст запроса
+//   - method — HTTP-метод (GET/POST)
+//   - path — путь к endpoint (например, "register.do")
+//   - params — параметры запроса (url.Values)
+//   - result — указатель на структуру для декодирования JSON-ответа
+//
+// ⚠️ В PROD-режиме с сертификатом запросы дополнительно подписываются.
 func (a *api) sendRequest(ctx context.Context, method method, path string, params url.Values, result interface{}) error {
 	endpoint := fmt.Sprintf("%s/%s", a.baseURL, path)
 	req, err := http.NewRequestWithContext(ctx, string(method), endpoint, nil)
