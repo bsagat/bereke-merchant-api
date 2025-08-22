@@ -70,6 +70,78 @@ type API interface {
 
 ---
 
+##  🎨 Визуализация процесса оплаты
+Полная визуализация последовательности вызовов API и взаимодействие между Client (пользователем), Service (вашим бэкендом), Bank Merchant Adapter (BMA) и Payment Broker.
+Ниже представлены три диаграммы, разделенные по соответствующим фазам.
+
+**Фаза 1: Предавторизация заказа:**
+
+```mermaid
+sequenceDiagram
+    actor Client as Client (User)
+    participant Service as Service (Shop Backend)
+    participant BMA as Merchant (Bank Merchant Adapter)
+    participant Broker as Broker (Payment Broker)
+
+    Note over Client,Broker: Phase 1: Order Pre-Authorization
+
+    Client->>Service: (1) Create Order Request <br> Product_ID=123, qty=2
+    Service->>Service: Calculate amount = 2000 KZT
+    Service->>BMA: (2) Create Order PreAuth <br> {amount=2000, currency=KZT, orderId=ORD-1001}
+    BMA->>Broker: (3) POST /registerPreAuth.do <br> payload: {amount, currency, orderId}
+    Broker-->>BMA: (4) Response 200 OK <br> {transactionId=TX-abc123, paymentUrl=[https://pay.kz/](https://pay.kz/)...}
+    BMA-->>Service: (5) Return PreAuth Result
+    Service-->>Client: (6) Provide paymentUrl to redirect
+    Client->>Broker: (7) Redirect to paymentUrl (card entry, 3DS, OTP)
+    Broker-->>Client: (8) Payment Success Screen
+    Client->>Service: (9) Callback/redirect success?orderId=ORD-1001
+    Service->>BMA: (10) Verify transaction status
+    BMA->>Broker: (11) GET /status.do?tx=TX-abc123
+    Broker-->>BMA: (12) status=AUTHORIZED
+    BMA-->>Service: (13) status=AUTHORIZED
+    Service-->>Client: (14) Order status updated to AUTHORIZED
+```
+
+**Фаза 2: Депозит заказа (списание средств)**
+
+```mermaid
+sequenceDiagram
+    actor Client as Client (User)
+    participant Service as Service (Shop Backend)
+    participant BMA as Merchant (Bank Merchant Adapter)
+    participant Broker as Broker (Payment Broker)
+
+    Note over Client,Broker: Phase 2: Order Deposition (Capture funds)
+
+    Service-->>Client: (1) Provide Product/Service ✅
+    Service->>BMA: (2) Deposit Order <br> {transactionId=TX-abc123, amount=2000}
+    BMA->>Broker: (3) POST /deposit.do
+    Broker-->>BMA: (4) Response 200 OK <br> {status=DEPOSITED}
+    BMA-->>Service: (5) Order deposited
+    Service-->>Client: (6) Notify payment completed
+```
+
+**Фаза 3: Реверсирование заказа (отмена или сбой)**
+
+```mermaid
+sequenceDiagram
+    actor Client as Client (User)
+    participant Service as Service (Shop Backend)
+    participant BMA as Merchant (Bank Merchant Adapter)
+    participant Broker as Broker (Payment Broker)
+
+    Note over Client,Broker: Phase 3: Order Reversal (Cancel or failure)
+
+    Service-->>Client: (1) Failure occurred ❌
+    Service->>BMA: (2) Reversal Order <br> {transactionId=TX-abc123}
+    BMA->>Broker: (3) POST /reverse.do
+    Broker-->>BMA: (4) Response 200 OK <br> {status=REVERSED}
+    BMA-->>Service: (5) Reversal confirmed
+    Service-->>Client: (6) Order has been reversed
+```
+
+---
+
 ## 🚀 Пример использования: Создание заказа
 
 Для создания нового платежного заказа используйте метод `RegisterOrder`. Убедитесь, что вы указали все обязательные поля, такие как `OrderNumber`, `Amount` и `Currency` (для тенге используйте код 398).
